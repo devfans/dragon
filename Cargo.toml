@@ -1,0 +1,19 @@
+[package]
+name = "dragon"
+version = "0.1.1"
+authors = ["devfans <stefanliu@outlook.com>"]
+edition = "2018"
+description = "3D/2D game engines implemented with ECS concepts"
+exclude = ["examples/*"]
+keywords = ["engine", "3d", "game", "visualization"]
+categories = ["visualization", "game-engines"]
+
+repository = "https://github.com/devfans/dragon"
+
+readme = "README.md"
+license = "GPL-3.0-or-later"
+
+
+[dependencies]
+cgmath = "0.17.0"
+
