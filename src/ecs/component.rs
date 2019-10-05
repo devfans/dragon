@@ -16,10 +16,15 @@ impl ComponentManager {
             store: HashMap::new(),
         }
     }
-    pub fn register_component<C: 'static + Component>(&mut self) {
+    pub fn register_component<C: 'static + Component>(&mut self) -> u32 {
+        let type_id = TypeId::of::<C>();
+        if let Some(id) = self.store.get(&type_id) {
+            return id.clone();
+        }
         let id = self.coder;
         self.coder *= 2;
-        self.store.insert(TypeId::of::<C>(), id);
+        self.store.insert(type_id, id);
+        id
     }
 
     pub fn get_code<C: 'static + Component>(&self) -> Option<&u32> {

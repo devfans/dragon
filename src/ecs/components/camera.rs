@@ -1,9 +1,7 @@
-pub struct CameraComponent {
-}
+use crate::ecs::Component;
+use crate::core::camera::Camera;
 
-impl CameraComponent {
-    pub fn default() -> Self {
-        Self {
-        }
-    }
-}
+pub type CameraComponent = Camera;
+
+impl Component for CameraComponent {}
+

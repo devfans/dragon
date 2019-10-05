@@ -15,5 +15,5 @@ license = "GPL-3.0-or-later"
 
 
 [dependencies]
-cgmath = "0.17.0"
+nalgebra = "0.18.0"
 

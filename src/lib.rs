@@ -4,4 +4,3 @@
 pub mod core;
 pub mod ecs;
 
-pub use cgmath::Point3;
