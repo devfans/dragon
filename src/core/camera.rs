@@ -10,7 +10,7 @@ pub enum Camera {
 }
 
 impl Camera {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Camera::Perspective {
             projection: Perspective3::new(16./9., 3.14/2., 1., 10000.),
         }

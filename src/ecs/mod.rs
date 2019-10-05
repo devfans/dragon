@@ -13,3 +13,8 @@ pub use components::{
     TransformComponent,
 };
 
+pub use system::System;
+pub use systems::rendering::RenderingSystem;
+
+pub use world::{ World, WorldState };
+

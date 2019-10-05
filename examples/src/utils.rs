@@ -8,3 +8,10 @@ pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 }
+
+#[macro_export]
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        wand::utils::log(&format!( $( $t )* ));
+    }
+}

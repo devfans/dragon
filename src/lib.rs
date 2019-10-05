@@ -4,3 +4,5 @@
 pub mod core;
 pub mod ecs;
 
+pub use ecs::{ World, WorldState };
+

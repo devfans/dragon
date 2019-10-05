@@ -2,6 +2,10 @@ import * as wand_app from "wand-example";
 
 window.$mobile = /mobile/i.test(window.navigator.userAgent) || typeof window.orientation !== 'undefined'
 
+window.requestAnimFrame = (function(callback) {
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); };
+  })();
+
 const app = wand_app.Application.new();
 const canvas = document.getElementById("canvas");
 const resize = () => {
@@ -18,4 +22,12 @@ window.addEventListener("mousemove", e => {
   let rec = canvas.getBoundingClientRect();
   app.on_mouse_move(e.clientX - rec.left, e.clientY - rec.top);
 });
+
+const renderer = () => {
+  app.draw();
+  window.requestAnimFrame(renderer);
+}
+
+window.requestAnimFrame(renderer);
+
 

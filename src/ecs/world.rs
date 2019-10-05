@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::collections::{HashMap, BTreeMap};
 use std::any::Any;
@@ -11,12 +11,12 @@ use crate::ecs::components::*;
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
-    entity_store: Rc<RefCell<HashMap<u32, Entity>>>,
+    pub entity_store: Rc<RefCell<HashMap<u32, Entity>>>,
     entity_manager: Rc<RefCell<EntityManager>>,
-    component_store: Rc<RefCell<HashMap<u32, HashMap<u32, Box<dyn Any>>>>>,
+    pub component_store: Rc<RefCell<HashMap<u32, HashMap<u32, Box<dyn Any>>>>>,
     component_manager: Rc<RefCell<ComponentManager>>,
     system_store: Rc<RefCell<BTreeMap<String, Box<dyn System>>>>,
-    active_camera: Rc<RefCell<(u32, u32)>>,
+    pub active_camera: Rc<Cell<u32>>,
 }
 
 impl WorldState {
@@ -27,16 +27,19 @@ impl WorldState {
             component_store: Rc::new(RefCell::new(HashMap::new())),
             component_manager: Rc::new(RefCell::new(ComponentManager::new())),
             system_store: Rc::new(RefCell::new(BTreeMap::new())),
-            active_camera: Rc::new(RefCell::new((0,0))),
+            active_camera: Rc::new(Cell::new(0)),
         })
     }
 
     pub fn register_component<C: 'static + Component>(&self) -> u32 {
         let mut manager = self.component_manager.borrow_mut();
-        manager.register_component::<C>()
+        let mut store = self.component_store.borrow_mut();
+        let id = manager.register_component::<C>();
+        store.entry(id).or_insert(HashMap::new());
+        id
     }
 
-    pub fn register_system<S: 'static + System>(&self, name: &String, system: S) {
+    pub fn register_system<S: 'static + System>(&self, name: &str, system: S) {
         let mut store = self.system_store.borrow_mut();
         if !store.contains_key(name) {
             store.insert(name.to_string(), Box::new(system));
@@ -58,17 +61,27 @@ impl WorldState {
         id
     }
 
-    pub fn bind_components<C: 'static + Component>(&self, entity_id: &u32, mut components: Vec<C>) {
+    pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) {
+        let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let mut component_store = self.component_store.borrow_mut();
-        if let Some(entity) = entity_store.get_mut(entity_id) {
-            for component in components.drain(..) {
-                let comp_id = self.register_component::<C>();
-                entity.components &= comp_id;
-                let entry = component_store.entry(comp_id).or_insert(HashMap::new());
-                entry.insert(entity_id.clone(), Box::new(component));
-            }
+        if let Some(entity) = entity_store.get_mut(&entity_id) {
+            entity.components &= comp_id;
+            let entry = component_store.entry(comp_id).or_insert(HashMap::new());
+            entry.insert(entity_id, Box::new(component));
         }
+    }
+
+    #[inline]
+    pub fn get_component_id<C: 'static + Component>(&self) -> Option<u32> {
+        match self.component_manager.borrow().get_code::<C>() {
+            Some(id) => Some(id.clone()),
+            None => None
+        }
+    }
+
+    pub fn switch_camera(&self, camera: u32) {
+        self.active_camera.set(camera);
     }
 }
 
@@ -87,6 +100,15 @@ impl World {
         Self {
             state,
         }
+    }
+
+    pub fn attach_default_camera(&self) {
+        let entity = self.state.create_entity();
+        let transform = TransformComponent::default();
+        let camera = CameraComponent::default();
+        self.state.bind_component(entity, camera);
+        self.state.bind_component(entity, transform);
+        self.state.switch_camera(entity);
     }
 }
 

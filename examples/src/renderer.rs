@@ -1,21 +1,24 @@
 use std::rc::Rc;
-use crate::ecs::*;
+use dragon::ecs::*;
 use std::collections::HashSet;
 
 pub struct RenderingSystem {
-    state: Rc<WorldState>
+    state: Rc<WorldState>,
+    ctx: web_sys::CanvasRenderingContext2d,
 }
 
 impl RenderingSystem {
-    pub fn new(state: Rc<WorldState>) -> Self {
+    pub fn new(state: Rc<WorldState>, ctx: web_sys::CanvasRenderingContext2d) -> Self {
         Self {
-            state
+            state,
+            ctx,
         }
     }
 }
 
 impl System for RenderingSystem {
     fn tick(&mut self) {
+        log!("renderer ticking");
         let c_store = self.state.component_store.borrow();
         let active_camera = self.state.active_camera.get();
         let camera_component_id = self.state.get_component_id::<CameraComponent>().unwrap();
@@ -31,7 +34,7 @@ impl System for RenderingSystem {
         for (_entity, mesh) in meshes.iter().filter(|entity| transforms.contains_key(entity.0)) {
             let mesh = mesh.downcast_ref::<MeshComponent>().unwrap();
             let mut cutter = mesh.breaks.iter();
-            let count = mesh.vertices.len();
+            let count = mesh.vertices.len() - 1;
             let mut cut_at = cutter.next().unwrap_or(&count);
             let mut lines = Vec::new();
             let mut line = Vec::new();
@@ -44,7 +47,7 @@ impl System for RenderingSystem {
                 }
             }
             for line in lines {
-                println!("{:?}", line);
+                log!("{:?}", line);
             }
         }
 

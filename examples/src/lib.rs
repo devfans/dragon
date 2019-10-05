@@ -1,8 +1,9 @@
-mod utils;
+#[macro_use] mod utils;
+mod renderer;
 
 use wasm_bindgen::prelude::*;
 extern crate wand;
-extern crate dragon;
+use dragon::*;
 
 use web_sys;
 
@@ -114,13 +115,38 @@ pub struct WorldSpan {
 
     pub width: f32,
     pub height: f32,
+    pub world: World,
 
     state: wand::core::State,
     font_cache: RefCell<Option<String>>, // Caching proper font for the string
 }
 
 impl WorldSpan {
-    pub fn new(state: wand::core::State, name: &str, text: &str, width: f32, height: f32) -> Self {
+    pub fn new(
+        state: wand::core::State,
+        ctx: web_sys::CanvasRenderingContext2d,
+        name: &str,
+        text: &str,
+        width: f32,
+        height: f32
+    ) -> Self {
+        let world = World::new();
+        world.attach_default_camera();
+
+
+        // Attach cube entity
+        let entity = world.state.create_entity();
+        let vertices = [(-2., -2., -8.,), (2., -2., -8.), (2., 2., -8.), (-2., 2., -8.)]
+            .into_iter()
+            .map(|v| core::Point3::new(v.0, v.1, v.2)).collect();
+        let mesh = ecs::MeshComponent::new(vertices, vec!());
+        let tranform = ecs::TransformComponent::default();
+        world.state.bind_component(entity, mesh);
+        world.state.bind_component(entity, tranform);
+
+        let renderer = renderer::RenderingSystem::new(world.state.clone(), ctx);
+        world.state.register_system("renderer", renderer);
+
         Self {
             name: name.to_string(),
             text: text.to_string(),
@@ -131,6 +157,7 @@ impl WorldSpan {
 
             width,
             height,
+            world,
             state,
             font_cache: RefCell::new(None),
         }
@@ -163,6 +190,8 @@ impl wand::SpanTrait for WorldSpan {
     }
 
     fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+        // Tick world here?
+        self.world.state.tick();
         let mut font = self.font_cache.borrow_mut();
         if font.is_none() {
             let style = wand::utils::get_font_with_limit(ctx, &self.text, (self.w * 0.8).min(100.), "Arial");
@@ -222,12 +251,7 @@ pub struct Application {
     app: wand::core::Application,
 }
 
-#[macro_export]
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        wand::utils::log(&format!( $( $t )* ));
-    }
-}
+
 
 #[wasm_bindgen]
 impl Application {
@@ -238,7 +262,7 @@ impl Application {
         let mut scene = wand::Scene::default(state.clone());
         let section1 = app.new_section("section1", 1., 1., 0.);
         let cursor_span = CursorSpan::new(state.clone(), "cursor", "Cursor:(N/A)", 0.2, 0.2);
-        let world_span = CursorSpan::new(state.clone(), "world", "World", 1., 1.);
+        let world_span = WorldSpan::new(state.clone(), app.context.clone(), "world", "World", 1., 1.);
         {
             let mut section = section1.borrow_mut();
             section.register_span(cursor_span);

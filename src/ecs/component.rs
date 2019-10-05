@@ -1,7 +1,26 @@
 use std::collections::HashMap;
-use std::any::TypeId;
+use std::any::{Any, TypeId};
+use std::iter;
+use std::collections::hash_map::IterMut;
 
 pub trait Component {
+}
+
+pub type ComponentStore = HashMap<u32, HashMap<u32, Box<dyn Any>>>;
+
+pub trait ComponentStorage {
+    fn get_component<C: 'static + Component>(&mut self, entity: u32, component: u32) -> Option<&mut C>;
+}
+
+impl ComponentStorage for ComponentStore {
+    fn get_component<C: 'static + Component>(&mut self, entity: u32, component: u32) -> Option<&mut C> {
+        if let Some(entry) = self.get_mut(&component) {
+            if let Some(comp) =  entry.get_mut(&entity) {
+                return comp.downcast_mut::<C>();
+            }
+        }
+        None
+    }
 }
 
 pub struct ComponentManager {
