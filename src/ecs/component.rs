@@ -1,25 +1,32 @@
 use std::collections::HashMap;
 use std::any::{Any, TypeId};
-use std::iter;
-use std::collections::hash_map::IterMut;
+use std::rc::Rc;
+use std::cell::{RefCell, Ref, RefMut};
 
 pub trait Component {
 }
 
-pub type ComponentStore = HashMap<u32, HashMap<u32, Box<dyn Any>>>;
-
-pub trait ComponentStorage {
-    fn get_component<C: 'static + Component>(&mut self, entity: u32, component: u32) -> Option<&mut C>;
+pub type ComponentStore = RefCell<ComponentStoreProto>;
+pub struct ComponentStoreProto {
+    store: HashMap<TypeId, Box<dyn Any>>
 }
 
-impl ComponentStorage for ComponentStore {
-    fn get_component<C: 'static + Component>(&mut self, entity: u32, component: u32) -> Option<&mut C> {
-        if let Some(entry) = self.get_mut(&component) {
-            if let Some(comp) =  entry.get_mut(&entity) {
-                return comp.downcast_mut::<C>();
-            }
-        }
-        None
+
+impl ComponentStoreProto {
+    pub fn new() -> ComponentStore {
+        RefCell::new(Self { store: HashMap::new() })
+    }
+
+    pub fn register<C: 'static + Component>(&mut self) {
+        let storage: HashMap<u32, C> = HashMap::new();
+        self.store.insert(TypeId::of::<C>(), Box::new(RefCell::new(storage)));
+    }
+
+    pub fn get<C: 'static + Component>(&self) -> Ref<HashMap<u32, C>> {
+        self.store.get(&TypeId::of::<C>()).unwrap().downcast_ref::<RefCell<HashMap<u32, C>>>().unwrap().borrow()
+    }
+    pub fn get_mut<C: 'static + Component>(&self) -> RefMut<HashMap<u32, C>> {
+        self.store.get(&TypeId::of::<C>()).unwrap().downcast_ref::<RefCell<HashMap<u32, C>>>().unwrap().borrow_mut()
     }
 }
 

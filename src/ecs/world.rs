@@ -7,36 +7,36 @@ use crate::ecs::entity::*;
 use crate::ecs::component::*;
 use crate::ecs::system::*;
 use crate::ecs::components::*;
+use crate::core::Matrix4;
 
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
-    pub entity_store: Rc<RefCell<HashMap<u32, Entity>>>,
-    pub entity_manager: Rc<RefCell<EntityManager>>,
-    pub component_store: Rc<RefCell<HashMap<u32, HashMap<u32, Box<dyn Any>>>>>,
-    pub component_manager: Rc<RefCell<ComponentManager>>,
-    pub system_store: Rc<RefCell<BTreeMap<String, Box<dyn System>>>>,
-    pub active_camera: Rc<Cell<u32>>,
+    pub entity_store: RefCell<HashMap<u32, Entity>>,
+    pub entity_manager: RefCell<EntityManager>,
+    pub component_store: ComponentStore,
+    pub component_manager: RefCell<ComponentManager>,
+    pub system_store: RefCell<BTreeMap<String, Box<dyn System>>>,
+    pub active_camera: Cell<u32>,
 }
 
 impl WorldState {
     pub fn new() -> Rc<Self> {
         Rc::new(Self {
-            entity_store: Rc::new(RefCell::new(HashMap::new())),
-            entity_manager: Rc::new(RefCell::new(EntityManager::new())),
-            component_store: Rc::new(RefCell::new(HashMap::new())),
-            component_manager: Rc::new(RefCell::new(ComponentManager::new())),
-            system_store: Rc::new(RefCell::new(BTreeMap::new())),
-            active_camera: Rc::new(Cell::new(0)),
+            entity_store: RefCell::new(HashMap::new()),
+            entity_manager: RefCell::new(EntityManager::new()),
+            component_store: ComponentStoreProto::new(),
+            component_manager: RefCell::new(ComponentManager::new()),
+            system_store: RefCell::new(BTreeMap::new()),
+            active_camera: Cell::new(0),
         })
     }
 
     pub fn register_component<C: 'static + Component>(&self) -> u32 {
         let mut manager = self.component_manager.borrow_mut();
         let mut store = self.component_store.borrow_mut();
-        let id = manager.register_component::<C>();
-        store.entry(id).or_insert(HashMap::new());
-        id
+        store.register::<C>();
+        manager.register_component::<C>()
     }
 
     pub fn register_system<S: 'static + System>(&self, name: &str, system: S) {
@@ -64,11 +64,11 @@ impl WorldState {
     pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
-        let mut component_store = self.component_store.borrow_mut();
+        let component_store = self.component_store.borrow();
         if let Some(entity) = entity_store.get_mut(&entity_id) {
             entity.components &= comp_id;
-            let entry = component_store.entry(comp_id).or_insert(HashMap::new());
-            entry.insert(entity_id, Box::new(component));
+            let mut store = component_store.get_mut::<C>();
+            store.insert(entity_id, component);
         }
     }
 
@@ -83,6 +83,13 @@ impl WorldState {
     pub fn switch_camera(&self, camera: u32) {
         self.active_camera.set(camera);
     }
+
+    /* FIXME Is it proper to fetch shared projection?
+    pub fn get_active_camera(&self) ->  {
+        let id = self.active_camera.get();
+        let camera = self.component_store.borrow().get::<CameraComponent>().get(id).unwrap().
+    }
+    */
 }
 
 #[derive(Clone)]
