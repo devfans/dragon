@@ -78,6 +78,27 @@ impl Transform3 {
         self.isometry.rotation = na::convert(rotation);
         self
     }
+
+    #[inline]
+    pub fn prepend_rotation(&mut self, axis: Unit<Vector3<f32>>, angle: f32) -> &mut Self {
+        let q = UnitQuaternion::from_axis_angle(&axis, angle);
+        self.isometry.rotation = q * self.isometry.rotation;
+        self
+    }
+
+    #[inline]
+    pub fn append_rotation(&mut self, axis: Unit<Vector3<f32>>, angle: f32) -> &mut Self {
+        self.isometry.rotation *= UnitQuaternion::from_axis_angle(&axis, angle);
+        self
+    }
+
+    #[inline]
+    pub fn matrix(&self) -> Matrix4<f32> {
+        self.isometry
+            .to_homogeneous()
+            .prepend_nonuniform_scaling(&self.scale)
+    }
+
 }
 
 

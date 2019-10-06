@@ -24,10 +24,18 @@ window.addEventListener("mousemove", e => {
 });
 
 const renderer = () => {
-  app.draw();
+  app.tick();
   window.requestAnimFrame(renderer);
 }
 
 window.requestAnimFrame(renderer);
+
+window.addEventListener("keyup", e => {
+  app.on_keyup(e.key);
+});
+
+window.addEventListener("keydown", e => {
+  app.on_keydown(e.key);
+});
 
 

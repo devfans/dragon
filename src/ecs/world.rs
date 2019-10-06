@@ -12,10 +12,10 @@ pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
     pub entity_store: Rc<RefCell<HashMap<u32, Entity>>>,
-    entity_manager: Rc<RefCell<EntityManager>>,
+    pub entity_manager: Rc<RefCell<EntityManager>>,
     pub component_store: Rc<RefCell<HashMap<u32, HashMap<u32, Box<dyn Any>>>>>,
-    component_manager: Rc<RefCell<ComponentManager>>,
-    system_store: Rc<RefCell<BTreeMap<String, Box<dyn System>>>>,
+    pub component_manager: Rc<RefCell<ComponentManager>>,
+    pub system_store: Rc<RefCell<BTreeMap<String, Box<dyn System>>>>,
     pub active_camera: Rc<Cell<u32>>,
 }
 
