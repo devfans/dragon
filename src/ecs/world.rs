@@ -60,7 +60,7 @@ impl WorldState {
         id
     }
 
-    pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) {
+    pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) -> bool {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
@@ -68,7 +68,9 @@ impl WorldState {
             entity.components &= comp_id;
             let mut store = component_store.get_mut::<C>();
             store.insert(entity_id, component);
+            return true;
         }
+        false
     }
 
     #[inline]

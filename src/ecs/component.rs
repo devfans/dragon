@@ -18,8 +18,7 @@ impl ComponentStoreProto {
     }
 
     pub fn register<C: 'static + Component>(&mut self) {
-        let storage: HashMap<u32, C> = HashMap::new();
-        self.store.insert(TypeId::of::<C>(), Box::new(RefCell::new(storage)));
+        self.store.entry(TypeId::of::<C>()).or_insert(Box::new(RefCell::new(HashMap::new() as HashMap<u32, C>)));
     }
 
     pub fn get<C: 'static + Component>(&self) -> Ref<HashMap<u32, C>> {
@@ -27,6 +26,10 @@ impl ComponentStoreProto {
     }
     pub fn get_mut<C: 'static + Component>(&self) -> RefMut<HashMap<u32, C>> {
         self.store.get(&TypeId::of::<C>()).unwrap().downcast_ref::<RefCell<HashMap<u32, C>>>().unwrap().borrow_mut()
+    }
+
+    pub fn borrow(&self) -> &HashMap<TypeId, Box<dyn Any>> {
+        &self.store
     }
 }
 

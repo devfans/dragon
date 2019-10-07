@@ -4,6 +4,9 @@ pub enum MeshRecipe<'a> {
     Basic {
         data: &'a BasicMesh,
     },
+    Simple {
+        data: &'a SimpleMesh,
+    }
 }
 
 pub type Mesh = Box<dyn MeshProto>;
@@ -36,7 +39,23 @@ impl MeshProto for BasicMesh {
 /// MeshPolygon draw triangles 
 pub struct SimpleMesh {
     pub vertices: Vec<Point3<f32>>,
-    pub polygons: Vec<(usize, usize, usize, usize)>,
+    // Point index + Color
+    pub polygons: Vec<(usize, usize, usize, String)>, 
 }
 
+impl SimpleMesh {
+
+    pub fn new(vertices: Vec<Point3<f32>>, polygons: Vec<(usize, usize, usize, String)>) -> Mesh {
+        Box::new(Self {
+            vertices,
+            polygons
+        })
+    }
+}
+
+impl MeshProto for SimpleMesh {
+    fn cook(&self) -> MeshRecipe {
+        MeshRecipe::Simple { data: &self }
+    }
+}
 
