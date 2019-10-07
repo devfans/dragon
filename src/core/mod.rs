@@ -9,5 +9,5 @@ pub use nalgebra::{
 };
 
 pub use camera::Camera;
-pub use mesh::Mesh;
+pub use mesh::{Mesh, MeshRecipe, BasicMesh, SimpleMesh};
 pub use transform::Transform3;

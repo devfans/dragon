@@ -175,7 +175,7 @@ impl Application {
             ]
                 .into_iter()
                 .map(|v| core::Point3::new(v.0, v.1, v.2)).collect();
-            let mesh = ecs::MeshComponent::new(vertices, vec!(9, 11, 13));
+            let mesh = core::BasicMesh::new(vertices, vec!(9, 11, 13));
             let mut transform = ecs::TransformComponent::default();
             transform.set_translation_xyz(0., 0., -16.);
             w.bind_component(entity, mesh);
