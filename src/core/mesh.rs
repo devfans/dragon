@@ -16,6 +16,7 @@ pub trait MeshProto {
 }
 
 /// MeshBasic only draw lines 
+#[derive(Clone)]
 pub struct BasicMesh {
     pub vertices: Vec<Point3<f32>>,
     pub breaks: Vec<usize>,
@@ -37,6 +38,7 @@ impl MeshProto for BasicMesh {
 }
 
 /// MeshPolygon draw triangles 
+#[derive(Clone)]
 pub struct SimpleMesh {
     pub vertices: Vec<Point3<f32>>,
     // Point index + Color

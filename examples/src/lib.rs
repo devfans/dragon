@@ -80,7 +80,7 @@ impl wand::SpanTrait for CursorSpan {
         }
     }
 
-    fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+    fn render_tick(&self, ctx: &web_sys::CanvasRenderingContext2d) {
         self.draw_outline(ctx);
         let mut font = self.font_cache.borrow_mut();
         if font.is_none() {
