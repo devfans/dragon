@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::any::{Any, TypeId};
-use std::rc::Rc;
 use std::cell::{RefCell, Ref, RefMut};
 
 pub trait Component {

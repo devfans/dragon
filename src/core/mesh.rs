@@ -6,6 +6,9 @@ pub enum MeshRecipe<'a> {
     },
     Simple {
         data: &'a SimpleMesh,
+    },
+    Complex {
+        data: &'a ComplexMesh,
     }
 }
 
@@ -60,4 +63,55 @@ impl MeshProto for SimpleMesh {
         MeshRecipe::Simple { data: &self }
     }
 }
+
+#[derive(Clone)]
+pub enum Brush {
+    Lines {
+        stroke: Option<String>,
+        fill: Option<String>,
+        vertices: Vec<Point3<f32>>,
+        action: u8, // 1 fill, 2, stroke, 3, fill and stroke
+    },
+    Circle {
+        stroke: Option<String>,
+        fill: Option<String>,
+        center: Point3<f32>,
+        radius: f32,
+        action: u8, // 1 fill, 2, stroke, 3, fill and stroke
+    },
+    Sphere {
+        stroke: Option<String>,
+        fill: Option<String>,
+        center: Point3<f32>,
+        radius: f32,
+        action: u8, // 1 fill, 2, stroke, 3, fill and stroke
+    },
+    Cube {
+        stroke: Option<String>,
+        center: Point3<f32>,
+        size: f32,
+    }
+}
+
+
+/// ComplexMesh draw common shapes
+#[derive(Clone)]
+pub struct ComplexMesh {
+    pub brushes: Vec<Brush>,
+}
+
+impl ComplexMesh {
+    pub fn new() -> Self {
+        Self {
+            brushes: Vec::new()
+        }
+    }
+}
+
+impl MeshProto for ComplexMesh {
+    fn cook(&self) -> MeshRecipe {
+        MeshRecipe::Complex { data: &self }
+    }
+}
+
 

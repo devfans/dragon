@@ -8,6 +8,7 @@ use crate::ecs::component::*;
 use crate::ecs::system::*;
 use crate::ecs::components::*;
 use crate::ecs::stage::*;
+use crate::core::Shape;
 
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
@@ -21,6 +22,7 @@ pub struct WorldState {
     pub current_stage: RefCell<(String, Box<dyn Stage>)>,
     pub renderer_store: RefCell<BTreeMap<String, Box<dyn System>>>,
     pub active_camera: Cell<u32>,
+    pub shape_store: RefCell<Vec<Shape>>,
 }
 
 impl WorldState {
@@ -35,6 +37,7 @@ impl WorldState {
             current_stage: RefCell::new((String::from("default"), Box::new(DefaultStage::new()))),
             renderer_store: RefCell::new(BTreeMap::new()),
             active_camera: Cell::new(0),
+            shape_store: RefCell::new(Vec::new()),
         })
     }
 
@@ -176,6 +179,8 @@ impl World {
         state.register_component::<MeshComponent>();
         state.register_component::<TransformComponent>();
         state.register_component::<CameraComponent>();
+        state.register_component::<ShapeComponent>();
+        state.register_component::<WidgetComponent>();
 
         Self {
             state,
