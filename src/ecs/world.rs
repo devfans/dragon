@@ -189,7 +189,9 @@ impl World {
 
     pub fn attach_default_camera(&self) {
         let entity = self.state.create_entity();
-        let transform = TransformComponent::default();
+        let mut transform = TransformComponent::default();
+        transform.set_translation_xyz(0., 0., 100.);
+
         let camera = CameraComponent::default();
         self.state.bind_component(entity, camera);
         self.state.bind_component(entity, transform);
