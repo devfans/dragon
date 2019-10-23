@@ -99,6 +99,10 @@ impl Transform3 {
             .prepend_nonuniform_scaling(&self.scale)
     }
 
+    pub fn isometry(&self) -> &Isometry3<f32> {
+        &self.isometry
+    }
+
 }
 
 
