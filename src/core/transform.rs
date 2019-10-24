@@ -103,6 +103,10 @@ impl Transform3 {
         &self.isometry
     }
 
+    pub fn position(&self) -> Point3<f32> {
+        Point3::from(self.isometry.translation.vector)
+    }
+
 }
 
 
