@@ -1,6 +1,6 @@
 [package]
 name = "dragon"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["devfans <stefanliu@outlook.com>"]
 edition = "2018"
 description = "3D/2D game engines implemented with ECS concepts"
