@@ -34,7 +34,7 @@ impl System for MovementSystem {
                 self.input.borrow_mut().axis("ArrowUp", "ArrowDown") * 0.1
             );
             transform.prepend_translation(
-                Vector3::new(0., 0., self.input.borrow_mut().axis("z", "x") * 0.1)
+                Vector3::new(0., 0., self.input.borrow_mut().axis("z", "x") * 0.6)
             );
         }
 

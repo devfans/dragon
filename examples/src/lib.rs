@@ -1,15 +1,11 @@
 #[macro_use] mod utils;
 mod movement;
 
-use wasm_bindgen::prelude::*;
-extern crate wand;
 use dragon::*;
-
-use web_sys;
 
 use std::cell::RefCell;
 use std::any::Any;
-use wasm_bindgen::prelude::*;
+use wand::prelude::{js::*, renderer::RendererContext};
 
 pub struct CursorSpan {
     pub name: String,
@@ -55,7 +51,8 @@ impl CursorSpan {
         self.text = text.to_string();
     }
 
-    fn draw_outline(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+    fn draw_outline(&self, ctx: &RendererContext) {
+        let ctx = &ctx.context_2d;
         ctx.set_stroke_style(&JsValue::from_str("white"));
         ctx.stroke_rect(self.x, self.y, self.w, self.h);
     }
@@ -71,7 +68,7 @@ impl wand::SpanTrait for CursorSpan {
     fn dispatch_event(&mut self, ev: &mut wand::component::Event) {
     }
 
-    fn dispath(&mut self, data: Box<dyn Any>) {
+    fn dispatch(&mut self, data: Box<dyn Any>) {
         if let Ok(text) = data.downcast::<String>() {
             self.text = text.to_string();
             // Clear font cache
@@ -80,8 +77,9 @@ impl wand::SpanTrait for CursorSpan {
         }
     }
 
-    fn render_tick(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+    fn render_tick(&self, ctx: &RendererContext) {
         self.draw_outline(ctx);
+        let ctx = &ctx.context_2d;
         let mut font = self.font_cache.borrow_mut();
         if font.is_none() {
             let size = wand::utils::get_font_with_limit(ctx, &self.text, self.w * 0.8, "Arial").min(20).max(10);
@@ -129,7 +127,7 @@ pub fn greet() {
 }
 
 pub fn start() {
-    let app = wand::core::Application::new_with_canvas_id("canvas");
+    let app = wand::core::Application::new_with_canvas_id("canvas", "canvas_gl");
     app.draw();
 }
 
@@ -143,7 +141,7 @@ pub struct Application {
 #[wasm_bindgen]
 impl Application {
     pub fn new() -> Self {
-        let mut app = wand::Application::new_with_canvas_id("canvas");
+        let mut app = wand::Application::new_with_canvas_id("canvas", "canvas_gl");
         let state = app.get_state();
 
         let mut scene = wand::Scene::default(state.clone());
@@ -266,7 +264,7 @@ impl Application {
             let cursor = state.fetch_span("cursor").unwrap();
             let mut cursor = cursor.borrow_mut();
             // log!("Call {}", cursor.get_name());
-            cursor.as_mut().dispath(
+            cursor.as_mut().dispatch(
                 Box::new(format!("Cursor: x: {}, y: {}", x, y))
             );
         }

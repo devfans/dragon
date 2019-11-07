@@ -11,7 +11,6 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "0.2"
 dragon = { path= "../", version = "*" }
 wand = { path= "../../wand", version = "*" }
 
@@ -34,16 +33,5 @@ wasm-bindgen-test = "0.2"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
-
-[dependencies.web-sys]
-version = "0.3.27"
-features = [
-  'CanvasRenderingContext2d',
-  'Document',
-  'Element',
-  'HtmlCanvasElement',
-  'Window',
-  'TextMetrics'
-]
 
 

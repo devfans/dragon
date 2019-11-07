@@ -8,9 +8,12 @@ window.requestAnimFrame = (function(callback) {
 
 const app = wand_app.Application.new();
 const canvas = document.getElementById("canvas");
+const canvas_gl = document.getElementById("canvas_gl");
 const resize = () => {
     canvas.width = document.documentElement.clientWidth;
+    canvas_gl.width = document.documentElement.clientWidth;
     canvas.height = document.documentElement.clientHeight;
+    canvas_gl.height = document.documentElement.clientHeight;
     app.on_size_change();
     app.draw();
 }
