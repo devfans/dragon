@@ -1,6 +1,53 @@
 use crate::core::*;
 
-pub struct Transform2d {
+pub struct Transform2 {
+    position: Vector2<f32>,
+    rotation: Vector2<f32>,
+    scale: Vector2<f32>
+}
+
+impl Transform2 {
+    pub fn new(position: Vector2<f32>, rotation: Vector2<f32>, scale: Vector2<f32>) -> Self {
+        Self {
+            position,
+            rotation,
+            scale
+        }
+    }
+
+    pub fn default(x: f32, y: f32) -> Self {
+        Self {
+            position: Vector2::new(x, y),
+            rotation: Vector2::new(0., 1.),
+            scale: Vector2::new(1., 1.)
+        }
+    }
+
+    #[inline]
+    pub fn translate(&mut self, dir: Vector2<f32>) {
+        self.position += dir
+    }
+
+    pub fn set_translation(&mut self, translation: Vector2<f32>) {
+        self.position = translation
+    }
+
+    pub fn set_rotation(&mut self, rotation: Vector2<f32>) {
+        self.rotation = rotation
+    }
+
+    #[inline]
+    pub fn rotate(&mut self, dir: Vector2<f32>) {
+        self.rotation += dir
+    }
+
+    pub fn translation(&self) -> &Vector2<f32>  {
+        &self.position
+    }
+
+    pub fn rotation(&self) -> &Vector2<f32>  {
+        &self.rotation
+    }
 }
 
 pub struct Transform3 {
@@ -106,7 +153,6 @@ impl Transform3 {
     pub fn position(&self) -> Point3<f32> {
         Point3::from(self.isometry.translation.vector)
     }
-
 }
 
 

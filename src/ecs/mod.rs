@@ -12,7 +12,9 @@ pub use components::{
     CameraComponent,
     MeshComponent,
     TransformComponent,
+    Transform2Component,
     WidgetComponent,
+    SpriteComponent
 };
 
 pub use system::System;

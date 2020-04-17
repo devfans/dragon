@@ -1,10 +1,12 @@
 pub mod mesh;
 pub mod camera;
 pub mod transform;
+pub mod sprite;
 
 pub use camera::CameraComponent;
 pub use mesh::MeshComponent;
-pub use transform::TransformComponent;
+pub use transform::{TransformComponent, Transform2Component};
+pub use sprite::SpriteComponent;
 
 use crate::ecs::Component;
 use crate::core::Shape;

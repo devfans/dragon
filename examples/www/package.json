@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "dependencies": {
-    "wand-example": "file:../pkg"
+    "wand-example": "file:../pkg",
+    "wand-js": "file:../../../wand-js"
   },
   "devDependencies": {
     "hello-wasm-pack": "^0.1.0",
