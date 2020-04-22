@@ -20,7 +20,7 @@ pub use components::{
 pub use system::System;
 pub use systems::rendering::RenderingSystem;
 
-pub use stage::Stage;
+pub use stage::{ Stage, StageEvent };
 
 pub use world::{ World, WorldState };
 

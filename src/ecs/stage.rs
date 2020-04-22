@@ -2,10 +2,14 @@ use std::cell::{Ref, RefMut, RefCell};
 use std::any::Any;
 use std::collections::HashMap;
 
+pub enum StageEvent {
+    Null,
+    EnterStage { name: String }
+}
 
 pub trait Stage {
     fn on_enter(&mut self) {}
-    fn tick(&mut self) {}
+    fn tick(&mut self) -> StageEvent { StageEvent::Null }
     fn on_exit(&mut self) {}
     fn dispatch(&mut self, _data: Box<dyn Any>) {}
 } 

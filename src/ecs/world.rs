@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, RefCell };
 use std::rc::Rc;
 use std::collections::{HashMap, BTreeMap};
 use std::any::Any;
@@ -94,6 +94,11 @@ impl WorldState {
         }
     }
 
+    pub fn unregister_renderer(&self, name: &str) {
+        let mut store = self.renderer_store.borrow_mut();
+        store.remove(name);
+    }
+
     pub fn register_system<S: 'static + System>(&self, name: &str, system: S) {
         let mut store = self.system_store.borrow_mut();
         store.register(name, system);
@@ -117,7 +122,13 @@ impl WorldState {
 
     pub fn tick(&self) {
         self.system_store.borrow().tick();
-        self.current_stage.borrow_mut().1.as_mut().tick();
+        let event = self.current_stage.borrow_mut().1.as_mut().tick();
+        match event {
+            StageEvent::Null => {},
+            StageEvent::EnterStage { name } => {
+                self.enter_stage(&name);
+            }
+        };
     }
 
     pub fn render_tick(&self) {
@@ -133,6 +144,11 @@ impl WorldState {
         let mut store = self.entity_store.borrow_mut();
         store.insert(entity.id, entity);
         id
+    }
+
+    fn create_global_entity(&self) {
+        let mut store = self.entity_store.borrow_mut();
+        store.insert(0, Entity { id: 0, components: 0});
     }
 
     pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) -> bool {
@@ -181,10 +197,17 @@ impl World {
         state.register_component::<CameraComponent>();
         state.register_component::<ShapeComponent>();
         state.register_component::<WidgetComponent>();
+        state.create_global_entity();
 
         Self {
             state,
         }
+    }
+
+    pub fn new_basic() -> Self {
+        let state = WorldState::new();
+        state.create_global_entity();
+        Self { state }
     }
 
     pub fn attach_default_camera(&self) {

@@ -59,3 +59,5 @@ impl ComponentManager {
         self.store.get(&TypeId::of::<C>())
     }
 }
+
+
