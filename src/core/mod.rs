@@ -3,6 +3,7 @@ pub mod mesh;
 pub mod shape;
 pub mod transform;
 pub mod widget;
+pub mod physics;
 
 pub use nalgebra::{
     self as na,
