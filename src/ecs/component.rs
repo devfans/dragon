@@ -30,6 +30,10 @@ impl ComponentStoreProto {
     pub fn borrow(&self) -> &HashMap<TypeId, Box<dyn Any>> {
         &self.store
     }
+
+    pub fn reset(&mut self) {
+        self.store.clear();
+    }
 }
 
 pub struct ComponentManager {
@@ -57,6 +61,11 @@ impl ComponentManager {
 
     pub fn get_code<C: 'static + Component>(&self) -> Option<&u32> {
         self.store.get(&TypeId::of::<C>())
+    }
+
+    pub fn reset(&mut self) {
+        self.coder = 1;
+        self.store.clear();
     }
 }
 

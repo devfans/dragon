@@ -32,9 +32,9 @@ impl SystemStoreProto {
     }
 
     pub fn register<S: 'static + System>(&mut self, name: &str, system: S) {
-        if !self.store.contains_key(name) {
-            self.store.insert(name.to_string(), RefCell::new(Box::new(system)));
-        }
+        // if !self.store.contains_key(name) {
+        self.store.insert(name.to_string(), RefCell::new(Box::new(system)));
+        // }
     }
 
     pub fn unregister(&mut self, name: &str) {

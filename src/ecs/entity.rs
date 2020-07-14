@@ -26,6 +26,10 @@ impl EntityManager {
             components: 0,
         }
     }
+
+    pub fn reset(&mut self) {
+        self.coder = 1;
+    }
 }
 
 

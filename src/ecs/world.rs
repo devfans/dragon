@@ -13,16 +13,17 @@ use crate::core::Shape;
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
-    pub entity_store: RefCell<HashMap<u32, Entity>>,
-    pub entity_manager: RefCell<EntityManager>,
+    entity_store: RefCell<HashMap<u32, Entity>>,
+    entity_manager: RefCell<EntityManager>,
     pub component_store: ComponentStore,
-    pub component_manager: RefCell<ComponentManager>,
-    pub system_store: SystemStore,
-    pub stage_store: StageStore,
-    pub current_stage: RefCell<(String, Box<dyn Stage>)>,
-    pub renderer_store: RefCell<BTreeMap<String, Box<dyn System>>>,
-    pub active_camera: Cell<u32>,
-    pub shape_store: RefCell<Vec<Shape>>,
+    component_manager: RefCell<ComponentManager>,
+    system_store: SystemStore,
+    stage_store: StageStore,
+    current_stage: RefCell<(String, Box<dyn Stage>)>,
+    renderer_store: RefCell<BTreeMap<String, Box<dyn System>>>,
+    active_camera: Cell<u32>,
+    shape_store: RefCell<Vec<Shape>>,
+    stage_event_callbacks: RefCell<BTreeMap<String, Box<dyn Fn(&str, &str)>>>,
 }
 
 impl WorldState {
@@ -38,7 +39,12 @@ impl WorldState {
             renderer_store: RefCell::new(BTreeMap::new()),
             active_camera: Cell::new(0),
             shape_store: RefCell::new(Vec::new()),
+            stage_event_callbacks: RefCell::new(BTreeMap::new()),
         })
+    }
+
+    pub fn current_stage(&self) -> String {
+        self.current_stage.borrow().0.clone()
     }
 
     pub fn enter<S: 'static + Stage>(&self, name: &str, stage: S) {
@@ -57,6 +63,22 @@ impl WorldState {
             let mut current_stage = self.current_stage.borrow_mut();
             current_stage.1.as_mut().on_enter();
         }
+        self.stage_event_callback(old_stage.0.clone(), name.to_string());
+    }
+
+    pub fn register_stage_event_callback<CB>(&self, name: String, callback: CB) where CB: 'static + Fn(&str, &str) {
+        let mut cbs = self.stage_event_callbacks.borrow_mut();
+        cbs.insert(name, Box::new(callback));
+    }
+
+    pub fn unregister_stage_event_callback(&self, name: &str) {
+        self.stage_event_callbacks.borrow_mut().remove(name);
+    }
+
+    fn stage_event_callback(&self, old: String, new: String) {
+        for callback in self.stage_event_callbacks.borrow().values() {
+            callback(&old, &new);
+        }
     }
 
     pub fn enter_stage(&self, name: &str) {
@@ -68,16 +90,19 @@ impl WorldState {
 
         // Popout the stage and swap with the old one
         let mut store = self.stage_store.borrow_mut();
-        if let Some(stage) = store.unregister(name) {
+
+        let old_stage = if let Some(stage) = store.unregister(name) {
             let old_stage = self.current_stage.replace((name.to_string(), stage.into_inner()));
             store.save_stage(&old_stage.0, old_stage.1);
-        }
+            old_stage.0.clone()
+        } else { String::from("None") };
 
         // Enter the new stage
         {
             let mut current_stage = self.current_stage.borrow_mut();
             current_stage.1.as_mut().on_enter();
         }
+        self.stage_event_callback(old_stage, name.to_string());
     }
 
     pub fn register_component<C: 'static + Component>(&self) -> u32 {
@@ -121,8 +146,8 @@ impl WorldState {
 
 
     pub fn tick(&self) {
-        self.system_store.borrow().tick();
         let event = self.current_stage.borrow_mut().1.as_mut().tick();
+        self.system_store.borrow().tick();
         match event {
             StageEvent::Null => {},
             StageEvent::EnterStage { name } => {
@@ -144,6 +169,20 @@ impl WorldState {
         let mut store = self.entity_store.borrow_mut();
         store.insert(entity.id, entity);
         id
+    }
+
+    // Clear entities and components
+    pub fn clear(&self) {
+        self.entity_manager.borrow_mut().reset();
+        self.entity_store.borrow_mut().clear();
+        self.component_manager.borrow_mut().reset();
+        self.component_store.borrow_mut().reset();
+
+        self.create_global_entity();
+    }
+
+    pub fn current_entities(&self) -> u32 {
+        self.entity_store.borrow().len() as u32
     }
 
     fn create_global_entity(&self) {
