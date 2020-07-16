@@ -7,6 +7,7 @@ pub mod components;
 pub mod systems;
 pub mod stage;
 
+pub use entity::Entity;
 pub use component::Component;
 pub use components::{
     CameraComponent,

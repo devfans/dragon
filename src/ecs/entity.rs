@@ -1,7 +1,8 @@
 
 pub struct Entity {
     pub id: u32,
-    pub components: u32,
+    pub components: u128,
+    pub indices: [u32; 128],
 }
 
 impl Entity {
@@ -24,6 +25,7 @@ impl EntityManager {
         Entity {
             id,
             components: 0,
+            indices: [0;128],
         }
     }
 
