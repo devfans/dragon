@@ -13,8 +13,7 @@ use crate::core::Shape;
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
-    entity_store: RefCell<HashMap<u32, Entity>>,
-    entity_manager: RefCell<EntityManager>,
+    entity_store: RefCell<EntityStore>,
     pub component_store: ComponentStore,
     component_manager: RefCell<ComponentManager>,
     system_store: SystemStore,
@@ -27,10 +26,9 @@ pub struct WorldState {
 }
 
 impl WorldState {
-    pub fn new() -> Rc<Self> {
+    pub fn new(cap: usize) -> Rc<Self> {
         Rc::new(Self {
-            entity_store: RefCell::new(HashMap::new()),
-            entity_manager: RefCell::new(EntityManager::new()),
+            entity_store: RefCell::new(EntityStore::new(cap)),
             component_store: ComponentStoreProto::new(),
             component_manager: RefCell::new(ComponentManager::new()),
             system_store: SystemStoreProto::new(),
@@ -170,39 +168,34 @@ impl WorldState {
         }
     }
 
+    #[inline]
     pub fn create_entity(&self) -> u32 {
-        let mut manager = self.entity_manager.borrow_mut();
-        let entity = manager.create_entity();
-        let id = entity.id;
-        let mut store = self.entity_store.borrow_mut();
-        store.insert(entity.id, entity);
-        id
+        self.entity_store.borrow_mut().create_entity()
     }
 
     // Clear entities and components
     pub fn clear(&self) {
-        self.entity_manager.borrow_mut().reset();
-        self.entity_store.borrow_mut().clear();
+        self.entity_store.borrow_mut().reset();
         self.component_manager.borrow_mut().reset();
         self.component_store.borrow_mut().reset();
 
         self.create_global_entity();
     }
 
-    pub fn current_entities(&self) -> u32 {
-        self.entity_store.borrow().len() as u32
+    #[inline]
+    pub fn current_entities(&self) -> usize {
+        self.entity_store.borrow().count()
     }
 
-    fn create_global_entity(&self) {
-        let mut store = self.entity_store.borrow_mut();
-        store.insert(0, Entity { id: 0, components: 0, indices: [0;128] });
+    fn create_global_entity(&self) -> u32 {
+        self.entity_store.borrow_mut().create_first_entity()
     }
 
     pub fn remove_component<C: 'static + Component>(&self, entity_id: u32) {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(&entity_id) {
+        if let Some(entity) = entity_store.get_mut(entity_id) {
             entity.components &= !comp_id;
             component_store.get_mut::<C>().remove(&entity_id);
         }
@@ -212,7 +205,7 @@ impl WorldState {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(&entity_id) {
+        if let Some(entity) = entity_store.get_mut(entity_id) {
             entity.components &= !comp_id;
             let index = entity.indices[comp_id.trailing_zeros() as usize];
             component_store.get_dense_mut::<C>().remove(index);
@@ -223,7 +216,7 @@ impl WorldState {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(&entity_id) {
+        if let Some(entity) = entity_store.get_mut(entity_id) {
             entity.components |= comp_id;
             let mut store = component_store.get_dense_mut::<C>();
             entity.indices[comp_id.trailing_zeros() as usize] = store.insert(entity_id, component);
@@ -236,7 +229,7 @@ impl WorldState {
         let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(&entity_id) {
+        if let Some(entity) = entity_store.get_mut(entity_id) {
             entity.components |= comp_id;
             let mut store = component_store.get_mut::<C>();
             store.insert(entity_id, component);
@@ -271,8 +264,8 @@ pub struct World {
 }
 
 impl World {
-    pub fn new() -> Self {
-        let state = WorldState::new();
+    pub fn new(cap: usize) -> Self {
+        let state = WorldState::new(cap);
         state.register_component::<MeshComponent>();
         state.register_component::<TransformComponent>();
         state.register_component::<CameraComponent>();
@@ -285,8 +278,8 @@ impl World {
         }
     }
 
-    pub fn new_basic() -> Self {
-        let state = WorldState::new();
+    pub fn new_basic(cap: usize) -> Self {
+        let state = WorldState::new(cap);
         state.create_global_entity();
         Self { state }
     }
