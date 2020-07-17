@@ -1,6 +1,5 @@
 
 use std::slice::{ Iter, IterMut };
-use std::iter::Filter;
 
 pub struct Entity {
     pub id: u32,

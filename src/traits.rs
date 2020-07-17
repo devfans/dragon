@@ -7,6 +7,16 @@ macro_rules! impl_component {
 }
 
 #[macro_export]
+macro_rules! impl_dense_component {
+    ($type: ty) => {
+        impl dragon::ecs::Component for $type {
+            fn dense() -> bool { true }
+        }
+    }
+}
+
+
+#[macro_export]
 macro_rules! entity_filter {
     ($w: expr $(,$T: ty)+) => {
         0 as u128 $(+ $w.get_component_id::<$T>().unwrap())+

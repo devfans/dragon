@@ -103,19 +103,11 @@ impl WorldState {
         self.stage_event_callback(old_stage, name.to_string());
     }
 
-    pub fn register_component<C: 'static + Component>(&self) -> u128 {
-        let mut manager = self.component_manager.borrow_mut();
-        let mut store = self.component_store.borrow_mut();
-        store.register::<C>();
-        manager.register_component::<C>()
-    }
-
-    pub fn register_dense_component<C: 'static + Component>(&self, cap: usize) -> u128 {
+    pub fn register_component<C: 'static + Component>(&self, cap: usize) {
         let mut manager = self.component_manager.borrow_mut();
         let mut store = self.component_store.borrow_mut();
         let id = manager.register_component::<C>();
-        store.register_as_dense::<C>(cap, id);
-        id
+        store.register::<C>(cap, id);
     }
 
     pub fn register_renderer<S: 'static + System>(&self, name: &str, system: S) {
@@ -168,7 +160,24 @@ impl WorldState {
         }
     }
 
-    pub fn remove_entity(&self, entity: u32) {
+    pub fn remove_entity(&self, entity_id: u32) {
+        let mut entity_store = self.entity_store.borrow_mut();
+        /*
+        let state = self.component_manager.borrow();
+        let store = self.component_store.borrow_mut();
+        let entity = entity_store.get_mut(entity_id).unwrap();
+        let mut components = entity.components;
+        while components > 0 {
+            let id = 1u128 << components.trailing_zeros();
+            components &= !id;
+            let (c, dense) = state.get_component(id);
+            if dense {
+                store.get_dense_mut().remove(entity);
+            } else {
+                store.get_mut().remove(entity);
+            }
+        }*/
+        entity_store.remove(entity_id);
     }
 
     #[inline]
@@ -195,50 +204,27 @@ impl WorldState {
     }
 
     pub fn remove_component<C: 'static + Component>(&self, entity_id: u32) {
-        let comp_id = self.register_component::<C>();
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
         if let Some(entity) = entity_store.get_mut(entity_id) {
-            entity.components &= !comp_id;
-            component_store.get_mut::<C>().remove(&entity_id);
+            if C::dense() {
+                component_store.get_dense_mut::<C>().remove(entity);
+            } else {
+                component_store.get_mut::<C>().remove(entity);
+            }
         }
     }
-    
-    pub fn remove_dense_component<C: 'static + Component>(&self, entity_id: u32) {
-        let comp_id = self.register_component::<C>();
+   
+    pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) {
         let mut entity_store = self.entity_store.borrow_mut();
         let component_store = self.component_store.borrow();
         if let Some(entity) = entity_store.get_mut(entity_id) {
-            entity.components &= !comp_id;
-            let index = entity.indices[comp_id.trailing_zeros() as usize];
-            component_store.get_dense_mut::<C>().remove(index);
+            if C::dense() {
+                component_store.get_dense_mut::<C>().insert(entity, component);
+            } else {
+                component_store.get_mut::<C>().insert(entity, component);
+            }
         }
-    }
-
-    pub fn bind_dense_component<C: 'static + Component>(&self, entity_id: u32, component: C) -> bool {
-        let comp_id = self.register_component::<C>();
-        let mut entity_store = self.entity_store.borrow_mut();
-        let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(entity_id) {
-            entity.components |= comp_id;
-            let mut store = component_store.get_dense_mut::<C>();
-            entity.indices[comp_id.trailing_zeros() as usize] = store.insert(entity_id, component);
-            return true;
-        }
-        false
-    }
-
-    pub fn bind_component<C: 'static + Component>(&self, entity_id: u32, component: C) -> bool {
-        let comp_id = self.register_component::<C>();
-        let mut entity_store = self.entity_store.borrow_mut();
-        let component_store = self.component_store.borrow();
-        if let Some(entity) = entity_store.get_mut(entity_id) {
-            entity.components |= comp_id;
-            let mut store = component_store.get_mut::<C>();
-            store.insert(entity_id, component);
-            return true;
-        }
-        false
     }
 
     #[inline]
@@ -269,11 +255,11 @@ pub struct World {
 impl World {
     pub fn new(cap: usize) -> Self {
         let state = WorldState::new(cap);
-        state.register_component::<MeshComponent>();
-        state.register_component::<TransformComponent>();
-        state.register_component::<CameraComponent>();
-        state.register_component::<ShapeComponent>();
-        state.register_component::<WidgetComponent>();
+        state.register_component::<MeshComponent>(10);
+        state.register_component::<TransformComponent>(10);
+        state.register_component::<CameraComponent>(10);
+        state.register_component::<ShapeComponent>(10);
+        state.register_component::<WidgetComponent>(10);
         state.create_global_entity();
 
         Self {
