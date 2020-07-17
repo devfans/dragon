@@ -223,7 +223,6 @@ impl ComponentStoreProto {
 pub struct ComponentManager {
     coder: u128,
     store: HashMap<TypeId, u128>,
-    indices: [(TypeId, bool); 128]
 }
 
 impl ComponentManager {
@@ -231,7 +230,6 @@ impl ComponentManager {
         Self {
             coder: 1,
             store: HashMap::new(),
-            indices: [(TypeId::of::<bool>(), false); 128],
         }
     }
     pub fn register_component<C: 'static + Component>(&mut self) -> u128 {
@@ -242,7 +240,6 @@ impl ComponentManager {
         let id = self.coder;
         self.coder *= 2;
         self.store.insert(type_id, id);
-        self.indices[id.trailing_zeros() as usize] = (type_id, C::dense());
         id
     }
 
@@ -252,15 +249,9 @@ impl ComponentManager {
     }
 
     #[inline]
-    pub fn get_component(&self, id: u128) -> (TypeId, bool) {
-        self.indices[id as usize]
-    }
-
-    #[inline]
     pub fn reset(&mut self) {
         self.coder = 1;
         self.store.clear();
-        self.indices = [(TypeId::of::<bool>(), false);128];
     }
 }
 
