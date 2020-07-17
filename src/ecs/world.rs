@@ -13,7 +13,7 @@ use crate::core::Shape;
 pub type EntityComponentCollection = HashMap<u32, Box<dyn Any>>;
 
 pub struct WorldState {
-    entity_store: RefCell<EntityStore>,
+    pub entity_store: RefCell<EntityStore>,
     pub component_store: ComponentStore,
     component_manager: RefCell<ComponentManager>,
     system_store: SystemStore,
@@ -166,6 +166,9 @@ impl WorldState {
         for system in self.renderer_store.borrow_mut().values_mut() {
             system.tick();
         }
+    }
+
+    pub fn remove_entity(&self, entity: u32) {
     }
 
     #[inline]
