@@ -34,8 +34,10 @@ pub trait ComponentStorage<'a, C> {
     fn new(cap: usize, id: u128) -> Self;
     fn iter(&'a self) -> Self::Iter;
     fn iter_mut(&'a mut self) -> Self::IterMut;
-    fn get(&'a self, entity: &Entity) -> Option<&'a C>;
-    fn get_mut(&'a mut self, entity: &Entity) -> Option<&'a mut C>;
+    fn try_get(&self, entity: &Entity) -> Option<&C>;
+    fn try_get_mut(&mut self, entity: &Entity) -> Option<&mut C>;
+    fn get(&self, entity: &Entity) -> &C;
+    fn get_mut(&mut self, entity: &Entity) -> &mut C;
     fn insert(&mut self, entity: &mut Entity, component: C);
     fn remove(&mut self, entity: &mut Entity);
     fn reset(&mut self);
@@ -65,7 +67,17 @@ impl<'a, C: 'static + Component>ComponentStorage<'a, C> for MapStore<C> {
     }
 
     #[inline]
-    fn get(&'a self, entity: &Entity) -> Option<&'a C> {
+    fn get(&self, entity: &Entity) -> &C {
+        self.data.get(&entity.id).unwrap()
+    }
+
+    #[inline]
+    fn get_mut(&mut self, entity: &Entity) -> &mut C {
+        self.data.get_mut(&entity.id).unwrap()
+    }
+
+    #[inline]
+    fn try_get(&self, entity: &Entity) -> Option<&C> {
         if (entity.components >> self.id) & 1 > 0 {
             self.data.get(&entity.id)
         } else {
@@ -74,7 +86,7 @@ impl<'a, C: 'static + Component>ComponentStorage<'a, C> for MapStore<C> {
     }
 
     #[inline]
-    fn get_mut(&'a mut self, entity: &Entity) -> Option<&'a mut C> {
+    fn try_get_mut(&mut self, entity: &Entity) -> Option<&mut C> {
         if (entity.components >> self.id) & 1 > 0 {
             self.data.get_mut(&entity.id)
         } else {
@@ -126,7 +138,7 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
     }
 
     #[inline]
-    fn get(&self, entity: &Entity) -> Option<&C> {
+    fn try_get(&self, entity: &Entity) -> Option<&C> {
         if (entity.components >> self.id) & 1 > 0 {
             self.data.get(entity.indices[self.id.trailing_zeros() as usize] as usize).map(|(_, v)| v)
         } else {
@@ -135,12 +147,23 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
     }
 
     #[inline]
-    fn get_mut(&'a mut self, entity: &Entity) -> Option<&'a mut C> {
+    fn try_get_mut(&mut self, entity: &Entity) -> Option<&mut C> {
         if (entity.components >> self.id) & 1 > 0 {
             self.data.get_mut(entity.indices[self.id.trailing_zeros() as usize] as usize).map(|(_, v)| v)
         } else {
             None
         }
+    }
+
+    #[inline]
+    fn get(&self, entity: &Entity) -> &C {
+        &self.data.get(entity.indices[self.id.trailing_zeros() as usize] as usize).unwrap().1
+    }
+
+    #[inline]
+    fn get_mut(&mut self, entity: &Entity) -> &mut C {
+        &mut self.data.get_mut(entity.indices[self.id.trailing_zeros() as usize] as usize)
+            .unwrap().1
     }
     
     #[inline]
