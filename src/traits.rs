@@ -57,3 +57,24 @@ macro_rules! entity_iter_mut {
     }
 }
 
+#[macro_export]
+macro_rules! ec_iter {
+    ($e: expr $(,$T: ty)+) => {
+        {
+            let mask = 0 as u128 $(+ $w.get_component_id::<$T>().unwrap())+;
+            $e.iter().filter(|entity| entity.components & mask == mask)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! ec_iter_mut {
+    ($e: expr $(,$T: ty)+) => {
+        {
+            let mask = 0 as u128 $(+ $w.get_component_id::<$T>().unwrap())+;
+            $e.iter_mut().filter(|entity| entity.components & mask == mask)
+        }
+    }
+}
+
+
