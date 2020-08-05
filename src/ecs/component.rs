@@ -5,6 +5,9 @@ use std::slice;
 use crate::ecs::Entity;
 use std::iter::Iterator;
 
+pub type Store<'a> = Ref<'a, ComponentStoreProto>;
+pub type StoreMut<'a> = RefMut<'a, ComponentStoreProto>;
+
 pub trait Component {
     fn dense() -> bool { false }
 }
@@ -32,12 +35,18 @@ pub trait ComponentStorage<'a, C> {
     type IterMut: Iterator<Item = Self::ItemMut>;
 
     fn new(cap: usize, id: u128) -> Self;
+    fn get_id(&self) -> u8;
+    fn len(&self) -> usize;
     fn iter(&'a self) -> Self::Iter;
     fn iter_mut(&'a mut self) -> Self::IterMut;
     fn try_get(&self, entity: &Entity) -> Option<&C>;
     fn try_get_mut(&mut self, entity: &Entity) -> Option<&mut C>;
+    // Get component for entity
     fn get(&self, entity: &Entity) -> &C;
+    // Get component for index
+    fn fetch(&self, entity: &mut Entity) -> &C;
     fn get_mut(&mut self, entity: &Entity) -> &mut C;
+    fn fetch_mut(&mut self, entity: &mut Entity) -> &mut C;
     fn insert(&mut self, entity: &mut Entity, component: C);
     fn remove(&mut self, entity: &mut Entity);
     fn reset(&mut self);
@@ -57,6 +66,12 @@ impl<'a, C: 'static + Component>ComponentStorage<'a, C> for MapStore<C> {
     }
 
     #[inline]
+    fn get_id(&self) -> u8 { self.id }
+
+    #[inline]
+    fn len(&self) -> usize { self.data.len() }
+
+    #[inline]
     fn iter<'b>(&'a self) -> Self::Iter {
         self.data.iter()
     }
@@ -73,6 +88,16 @@ impl<'a, C: 'static + Component>ComponentStorage<'a, C> for MapStore<C> {
 
     #[inline]
     fn get_mut(&mut self, entity: &Entity) -> &mut C {
+        self.data.get_mut(&entity.id).unwrap()
+    }
+
+    #[inline]
+    fn fetch(&self, entity: &mut Entity) -> &C {
+        self.data.get(&entity.id).unwrap()
+    }
+
+    #[inline]
+    fn fetch_mut(&mut self, entity: &mut Entity) -> &mut C {
         self.data.get_mut(&entity.id).unwrap()
     }
 
@@ -128,6 +153,12 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
     }
 
     #[inline]
+    fn get_id(&self) -> u8 { self.id }
+
+    #[inline]
+    fn len(&self) -> usize { self.data.len() }
+
+    #[inline]
     fn iter(&'a self) -> Self::Iter {
         self.data.iter()
     }
@@ -140,7 +171,7 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
     #[inline]
     fn try_get(&self, entity: &Entity) -> Option<&C> {
         if (entity.components >> self.id) & 1 > 0 {
-            self.data.get(entity.indices[self.id.trailing_zeros() as usize] as usize).map(|(_, v)| v)
+            self.data.get(entity.indices[self.id as usize] as usize).map(|(_, v)| v)
         } else {
             None
         }
@@ -149,7 +180,7 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
     #[inline]
     fn try_get_mut(&mut self, entity: &Entity) -> Option<&mut C> {
         if (entity.components >> self.id) & 1 > 0 {
-            self.data.get_mut(entity.indices[self.id.trailing_zeros() as usize] as usize).map(|(_, v)| v)
+            self.data.get_mut(entity.indices[self.id as usize] as usize).map(|(_, v)| v)
         } else {
             None
         }
@@ -157,15 +188,30 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
 
     #[inline]
     fn get(&self, entity: &Entity) -> &C {
-        &self.data.get(entity.indices[self.id.trailing_zeros() as usize] as usize).unwrap().1
+        &self.data.get(entity.indices[self.id as usize] as usize).unwrap().1
     }
 
     #[inline]
     fn get_mut(&mut self, entity: &Entity) -> &mut C {
-        &mut self.data.get_mut(entity.indices[self.id.trailing_zeros() as usize] as usize)
+        &mut self.data.get_mut(entity.indices[self.id as usize] as usize)
             .unwrap().1
     }
     
+    #[inline]
+    fn fetch(&self, entity: &mut Entity) -> &C {
+        let entry = self.data.get(entity.indices[self.id as usize] as usize).unwrap();
+        entity.id = entry.0;
+        &entry.1
+    }
+
+    #[inline]
+    fn fetch_mut(&mut self, entity: &mut Entity) -> &mut C {
+        let entry = self.data.get_mut(entity.indices[self.id as usize] as usize)
+            .unwrap();
+        entity.id = entry.0;
+        &mut entry.1
+    }
+
     #[inline]
     fn insert(&mut self, entity: &mut Entity, component: C) {
         // Find if any blank
@@ -278,4 +324,41 @@ impl ComponentManager {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+    use crate::ecs::entity::*;
 
+    struct A {}
+    struct B {}
+    impl Component for A {
+        fn dense() -> bool { true }
+    }
+    impl Component for B {}
+
+    #[test]
+    fn test_component_store() {
+        let manager = RefCell::new(ComponentManager::new());
+        let store = ComponentStoreProto::new();
+        let entities = RefCell::new(EntityStore::new(10));
+        let mut m = manager.borrow_mut();
+        let mut s = store.borrow_mut();
+        let mut e = entities.borrow_mut();
+        let c_a_id = m.register_component::<A>();
+        s.register::<A>(10, c_a_id);
+        let c_b_id = m.register_component::<B>();
+        s.register::<B>(10, c_b_id);
+        let mut c_a = s.get_dense_mut::<A>();
+        let mut c_b = s.get_mut::<B>();
+        let entity_id = e.create_entity();
+        let mut entity = e.get_mut(entity_id).unwrap();
+        let a = A {};
+        let b = B {};
+        c_a.insert(entity, a);
+        c_b.insert(entity, b);
+        let _ = c_a.get_mut(entity);
+        let _ = c_b.get_mut(entity);
+    }
+}
+ 

@@ -1,6 +1,8 @@
 
 use std::slice::{ Iter, IterMut };
+use super::component::{ Store, Component, ComponentStorage };
 
+#[derive(Clone)]
 pub struct Entity {
     pub id: u32,
     pub components: u128,
@@ -20,6 +22,17 @@ impl Entity {
         self.id = id;
         self.components = 0;
         self.indices = [0;128];
+    }
+
+    #[inline]
+    pub fn set_component(&mut self, id: u8, index: u32) {
+        self.indices[id as usize] = index;
+        self.components |= 1u128 << id;
+    }
+
+    #[inline]
+    pub fn has_component(&self, id: u8) -> bool {
+        self.components & (1u128 << id) > 0
     }
 }
 
@@ -54,6 +67,19 @@ impl EntityStore {
     #[inline]
     pub fn get_mut(&mut self, index: u32) -> Option<&mut Entity> {
         self.data.get_mut(index as usize)
+    }
+
+    #[inline]
+    pub fn bind_component<C: 'static + Component>(
+        &mut self, store: &Store, entity: u32, component: C
+    ) {
+        if let Some(entity) = self.get_mut(entity) {
+            if C::dense() {
+                store.get_dense_mut::<C>().insert(entity, component);
+            } else {
+                store.get_mut::<C>().insert(entity, component);
+            }
+        }
     }
     
     #[inline]

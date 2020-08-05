@@ -15,6 +15,13 @@ macro_rules! impl_dense_component {
     }
 }
 
+#[macro_export]
+macro_rules! mask {
+    () => {
+        0u128
+    }
+}
+ 
 
 #[macro_export]
 macro_rules! entity_filter {
@@ -59,22 +66,38 @@ macro_rules! entity_iter_mut {
 
 #[macro_export]
 macro_rules! ec_iter {
-    ($e: expr $(,$T: ty)+) => {
+    ($w: expr, $e: expr, $m: expr $(,$T: ty)+) => {
         {
-            let mask = 0 as u128 $(+ $w.get_component_id::<$T>().unwrap())+;
-            $e.iter().filter(|entity| entity.components & mask == mask)
+            $m += 0 $(+ $w.get_component_id::<$T>().unwrap())+;
+            $e.iter().filter(|entity| entity.components & $m == $m)
         }
     }
 }
 
 #[macro_export]
 macro_rules! ec_iter_mut {
-    ($e: expr $(,$T: ty)+) => {
+    ($w: expr, $e: expr $(,$T: ty)+) => {
         {
             let mask = 0 as u128 $(+ $w.get_component_id::<$T>().unwrap())+;
             $e.iter_mut().filter(|entity| entity.components & mask == mask)
         }
     }
 }
+
+#[macro_export]
+macro_rules! dense_iter {
+    ($state: expr) => {
+        $state.iter().filter(|(id, _)| *id > 0)
+    }
+}
+
+#[macro_export]
+macro_rules! dense_iter_mut {
+    ($state: expr) => {
+        $state.iter_mut().filter(|(id, _)| *id > 0)
+    }
+}
+
+ 
 
 
