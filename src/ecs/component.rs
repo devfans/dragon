@@ -13,6 +13,7 @@ pub trait Component {
 }
 
 pub type ComponentStore = RefCell<ComponentStoreProto>;
+pub type ComponentStoreRef<'a> = Ref<'a, ComponentStoreProto>;
 pub struct ComponentStoreProto {
     store: HashMap<TypeId, Box<dyn Any>>,
 }

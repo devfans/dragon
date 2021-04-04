@@ -7,8 +7,8 @@ pub mod components;
 pub mod systems;
 pub mod stage;
 
-pub use entity::Entity;
-pub use component::{ Component, ComponentStorage };
+pub use entity::{ Entity, EntityStore, Entities, EntitiesRef };
+pub use component::{ Component, ComponentStorage, ComponentStore, ComponentStoreRef };
 pub use components::{
     CameraComponent,
     MeshComponent,

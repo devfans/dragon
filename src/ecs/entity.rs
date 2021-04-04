@@ -1,6 +1,7 @@
 
 use std::slice::{ Iter, IterMut };
 use super::component::{ Store, Component, ComponentStorage };
+use std::cell::{Ref, RefMut};
 
 #[derive(Clone)]
 pub struct Entity {
@@ -36,6 +37,8 @@ impl Entity {
     }
 }
 
+pub type Entities<'a> = RefMut<'a, EntityStore>;
+pub type EntitiesRef<'a> = Ref<'a, EntityStore>;
 pub struct EntityStore {
     blanks: Vec<usize>,
     data: Vec<Entity>,
@@ -61,12 +64,30 @@ impl EntityStore {
 
     #[inline]
     pub fn get(&self, index: u32) -> Option<&Entity> {
-        self.data.get(index as usize)
+        match self.data.get(index as usize) {
+            Some(entity) => {
+                if entity.id == index {
+                    Some(entity)
+                } else {
+                    None
+                }
+            },
+            None => None,
+        }
     }
 
     #[inline]
     pub fn get_mut(&mut self, index: u32) -> Option<&mut Entity> {
-        self.data.get_mut(index as usize)
+        match self.data.get_mut(index as usize) {
+            Some(entity) => {
+                if entity.id == index {
+                    Some(entity)
+                } else {
+                    None
+                }
+            },
+            None => None,
+        }
     }
 
     #[inline]
@@ -98,8 +119,10 @@ impl EntityStore {
     #[inline]
     pub fn remove(&mut self, entity: u32) {
         // Set entity as 0 for blank space
-        self.data[entity as usize].id = 0;
-        self.blanks.push(entity as usize);
+        if self.data[entity as usize].id != 0 {
+            self.data[entity as usize].id = 0;
+            self.blanks.push(entity as usize);
+        }
     }
 
     pub fn reset(&mut self) {
