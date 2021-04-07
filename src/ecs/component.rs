@@ -228,11 +228,14 @@ impl<'a, C: 'static + Component> ComponentStorage<'a, C> for DenseStore<C> {
 
     #[inline]
     fn remove(&mut self, entity: &mut Entity) {
-        // Set entity as 0 for blank space
-        let index = entity.indices[self.id as usize];
-        self.data[index as usize].0 = 0;
-        self.blanks.push(index);
-        entity.components &= !(1u128 << self.id);
+        let mask = 1u128 << self.id;
+        if entity.components & mask != 0 {
+            // Set entity as 0 for blank space
+            let index = entity.indices[self.id as usize];
+            self.data[index as usize].0 = 0;
+            self.blanks.push(index);
+            entity.components &= !mask;
+        }
     }
 
     #[inline]
